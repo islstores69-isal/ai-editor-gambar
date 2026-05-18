@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="id" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor AI USEUS - Studio Edit Foto Profesional</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 9999px;
+        }
+        
+        /* Custom transitions and animations */
+        .fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Glassmorphism effects */
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 font-sans flex flex-col">
+
+    <!-- Top Banner: API & Mode Configuration -->
+    <div class="border-b border-blue-100 dark:border-slate-900 bg-blue-50/80 dark:bg-slate-900/90 glass-panel sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-2.5 max-w-6xl flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <span id="mode-indicator" class="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <p class="text-xs md:text-sm font-medium">
+                    Mode Engine: <strong id="mode-text" class="text-amber-500 dark:text-amber-400">Demo Lokal (Gratis & Bebas Error)</strong>
+                </p>
+                <button onclick="toggleInfoBox()" class="text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                    <i class="fa-regular fa-circle-question"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-2 bg-white dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <i class="fa-solid fa-key text-slate-400 text-xs"></i>
+                    <input 
+                        type="password" 
+                        id="api-key-input"
+                        placeholder="Masukkan Gemini API Key..." 
+                        class="text-xs outline-none bg-transparent w-40 md:w-52 transition-all"
+                        oninput="handleApiKeyChange(this.value)"
+                    />
+                </div>
+                <button 
+                    id="engine-toggle-btn"
+                    onclick="toggleEngineMode()"
+                    class="text-xs px-3 py-1.5 rounded-lg font-bold bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 dark:hover:bg-amber-500/30 transition-all"
+                >
+                    Pakai Demo
+                </button>
+            </div>
+        </div>
+        
+        <!-- API Info Help Box -->
+        <div id="info-box" class="hidden container mx-auto px-4 pb-4 max-w-6xl fade-in">
+            <div class="p-4 rounded-xl border border-blue-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs md:text-sm text-slate-600 dark:text-slate-300 flex gap-3">
+                <i class="fa-solid fa-circle-info text-blue-500 text-base shrink-0 mt-0.5"></i>
+                <div>
+                    <p class="font-bold mb-1 text-slate-800 dark:text-white">Tentang Integrasi Engine Gemini AI:</p>
+                    <p class="mb-2">Aplikasi ini berjalan dalam dua opsi pemrosesan gambar:</p>
+                    <ul class="list-disc pl-4 space-y-1 mb-2">
+                        <li><strong>Mode Demo Lokal:</strong> Berjalan luring/tanpa server. Menggunakan algoritma Canvas HTML5 untuk merekonstruksi, memotong, dan menempatkan foto secara estetik pada studio virtual yang Anda pilih. Sangat stabil dan bebas biaya.</li>
+                        <li><strong>Gemini AI Live:</strong> Mengirimkan prompt serta data gambar Anda langsung ke API `gemini-2.5-flash-image-preview` milik Google untuk regenerasi berbasis kecerdasan buatan sesungguhnya.</li>
+                    </ul>
+                    <p>Dapatkan API key Anda secara gratis di <a href="https://aistudio.google.com/" target="_blank" class="text-blue-500 dark:text-blue-400 font-bold hover:underline">Google AI Studio</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navbar -->
+    <nav class="border-b border-slate-200 dark:border-slate-900 bg-white/70 dark:bg-slate-950/70 glass-panel px-6 py-4 flex justify-between items-center transition-colors">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-wand-magic-sparkles text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-blue-400 to-cyan-400">
+                    USEUS AI
+                </h1>
+                <p class="text-[10px] opacity-70 tracking-widest uppercase font-semibold">Studio Editor AI</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Mock Google User -->
+            <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-100 dark:border-slate-800 bg-blue-50/50 dark:bg-slate-900/50">
+                <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-green-400 to-blue-500 flex items-center justify-center text-[10px] text-white font-bold">
+                    U
+                </div>
+                <span class="text-xs font-semibold pr-1">Google User</span>
+            </div>
+
+            <!-- Dark / Light Mode Toggle -->
+            <button 
+                onclick="toggleDarkMode()" 
+                class="p-2.5 rounded-xl bg-blue-100/50 dark:bg-slate-900 text-blue-600 dark:text-yellow-400 hover:scale-105 active:scale-95 transition-all"
+                title="Ganti Tema"
+            >
+                <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Application Panel -->
+    <main class="container mx-auto px-4 py-8 max-w-6xl flex-1 flex flex-col">
+        
+        <!-- Tab Selector Menu -->
+        <div class="flex justify-center mb-8 overflow-x-auto pb-1.5">
+            <div class="p-1.5 rounded-2xl flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm whitespace-nowrap">
+                <button
+                    onclick="switchTab('product')"
+                    id="tab-btn-product"
+                    class="px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md"
+                >
+                    <i class="fa-solid fa-circle-nodes"></i>
+                    Foto Produk Maker
+                </button>
+                <button
+                    onclick="switchTab('prewed')"
+                    id="tab-btn-prewed"
+                    class="px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"
+                >
+                    <i class="fa-solid fa-heart"></i>
+                    Prewedding AI
+                </button>
+                <button
+                    onclick="switchTab('merge')"
+                    id="tab-btn-merge"
+                    class="px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all text-slate-400 hover:text-blue-500 dark:hover:text-blue-400"
+                >
+                    <i class="fa-solid fa-images"></i>
+                    Gabung Foto (Max 4)
+                </button>
+            </div>
+        </div>
+
+        <!-- Notification / Toast / Error Bar -->
+        <div id="toast-bar" class="hidden mb-6 mx-auto max-w-2xl w-full bg-red-500/10 border border-red-500/30 text-red-500 px-4 py-3.5 rounded-xl text-center text-sm font-semibold flex items-center justify-center gap-2.5">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="toast-text">Peringatan: Mohon masukkan bahan foto terlebih dahulu.</span>
+            <button onclick="dismissToast()" class="ml-auto text-red-400 hover:text-red-600">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Application Columns -->
+        <div class="grid lg:grid-cols-2 gap-8 items-start">
+            
+            <!-- Left Workspace (Uploader & Configs) -->
+            <div class="rounded-3xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xl">
+                
+                <!-- 1. PRODUCT MAKER TAB -->
+                <div id="panel-product" class="space-y-6 fade-in">
+                    <div class="space-y-1.5">
+                        <h2 class="text-lg font-black flex items-center gap-2">
+                            <i class="fa-solid fa-box text-blue-500"></i> Foto Produk Tunggal
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Unggah sebuah foto produk mentah (tanpa latar belakang akan memberikan hasil yang lebih rapi).</p>
+                    </div>
+
+                    <!-- Upload Box -->
+                    <div 
+                        onclick="document.getElementById('product-file-input').click()"
+                        class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-400 rounded-2xl h-64 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/50 relative overflow-hidden group"
+                    >
+                        <input type="file" id="product-file-input" class="hidden" accept="image/*" onchange="previewProductImage(this)">
+                        
+                        <div id="product-placeholder" class="text-center p-6 space-y-3">
+                            <div class="w-14 h-14 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-cloud-arrow-up text-blue-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold">Klik Untuk Upload Gambar Produk</p>
+                                <p class="text-[11px] text-slate-400">Mendukung format PNG, JPG, atau WEBP</p>
+                            </div>
+                        </div>
+
+                        <img id="product-preview-img" class="hidden w-full h-full object-contain p-4" alt="Product source">
+                        
+                        <button 
+                            id="remove-product-btn"
+                            onclick="resetProductUpload(event)"
+                            class="hidden absolute top-3 right-3 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-colors"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Prompt Instruction -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs md:text-sm font-bold">
+                            <label>Instruksi Latar Belakang (Prompt)</label>
+                            <span onclick="usePresetPrompt('product', 0)" class="text-blue-500 dark:text-blue-400 cursor-pointer hover:underline">
+                                💡 Contoh Studio Marmer
+                            </span>
+                        </div>
+                        <textarea 
+                            id="product-prompt"
+                            class="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all h-28 resize-none text-xs md:text-sm"
+                        >Tempatkan produk ini di atas meja marmer putih dengan pencahayaan studio yang lembut dan profesional. Berikan bayangan yang realistis.</textarea>
+                    </div>
+                </div>
+
+                <!-- 2. PREWEDDING AI TAB -->
+                <div id="panel-prewed" class="hidden space-y-6 fade-in">
+                    <div class="space-y-1.5">
+                        <h2 class="text-lg font-black flex items-center gap-2">
+                            <i class="fa-solid fa-heart text-pink-500"></i> Prewedding AI Studio
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Unggah foto mempelai pria dan mempelai wanita secara terpisah untuk digabungkan menjadi foto prewedding yang menawan.</p>
+                    </div>
+
+                    <!-- Twin Upload Grid -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Groom Slot -->
+                        <div 
+                            onclick="document.getElementById('groom-file-input').click()"
+                            class="aspect-[3/4] border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-400 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/50 relative overflow-hidden group"
+                        >
+                            <input type="file" id="groom-file-input" class="hidden" accept="image/*" onchange="previewGroomImage(this)">
+                            <div id="groom-placeholder" class="text-center p-3 space-y-1">
+                                <i class="fa-solid fa-user text-blue-500 text-2xl group-hover:scale-110 transition-transform"></i>
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Foto Mempelai Pria</p>
+                                <p class="text-[9px] text-slate-400">(Ambil dari dada ke kepala)</p>
+                            </div>
+                            <img id="groom-preview-img" class="hidden w-full h-full object-cover" alt="Groom source">
+                            <button 
+                                id="remove-groom-btn"
+                                onclick="resetGroomUpload(event)"
+                                class="hidden absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors"
+                            >
+                                <i class="fa-solid fa-xmark text-xs"></i>
+                            </button>
+                        </div>
+
+                        <!-- Bride Slot -->
+                        <div 
+                            onclick="document.getElementById('bride-file-input').click()"
+                            class="aspect-[3/4] border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-pink-500 dark:hover:border-pink-400 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/50 relative overflow-hidden group"
+                        >
+                            <input type="file" id="bride-file-input" class="hidden" accept="image/*" onchange="previewBrideImage(this)">
+                            <div id="bride-placeholder" class="text-center p-3 space-y-1">
+                                <i class="fa-solid fa-person-dress text-pink-500 text-2xl group-hover:scale-110 transition-transform"></i>
+                                <p class="text-xs font-bold text-slate-700 dark:text-slate-200 block">Foto Mempelai Wanita</p>
+                                <p class="text-[9px] text-slate-400">(Ambil dari dada ke kepala)</p>
+                            </div>
+                            <img id="bride-preview-img" class="hidden w-full h-full object-cover" alt="Bride source">
+                            <button 
+                                id="remove-bride-btn"
+                                onclick="resetBrideUpload(event)"
+                                class="hidden absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors"
+                            >
+                                <i class="fa-solid fa-xmark text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Prewed Prompt -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs md:text-sm font-bold">
+                            <label>Latar Belakang & Busana</label>
+                            <span onclick="usePresetPrompt('prewed', 0)" class="text-pink-500 dark:text-pink-400 cursor-pointer hover:underline">
+                                🌅 Tema Sakura Jepang
+                            </span>
+                        </div>
+                        <textarea 
+                            id="prewed-prompt"
+                            class="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-pink-500 outline-none transition-all h-24 resize-none text-xs md:text-sm"
+                        >Foto prewedding romantis bergaya minimalis modern di taman bunga sakura Jepang dengan pancahayaan alami matahari sore yang hangat.</textarea>
+                    </div>
+                </div>
+
+                <!-- 3. GABUNG FOTO TAB -->
+                <div id="panel-merge" class="hidden space-y-6 fade-in">
+                    <div class="space-y-1.5">
+                        <h2 class="text-lg font-black flex items-center gap-2">
+                            <i class="fa-solid fa-cubes text-cyan-500"></i> Gabung 2 - 4 Foto
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Unggah foto-foto berbeda yang ingin disatukan secara estetik ke dalam sebuah kolase baru berlatar unik.</p>
+                    </div>
+
+                    <!-- Image List Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <!-- Preview Cards inserted here by script -->
+                        <div id="merge-preview-container" class="contents"></div>
+                        
+                        <!-- Add Button -->
+                        <div 
+                            id="add-merge-btn-card"
+                            onclick="document.getElementById('merge-file-input').click()"
+                            class="aspect-square border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-400 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/50"
+                        >
+                            <input type="file" id="merge-file-input" class="hidden" accept="image/*" multiple onchange="handleMergeImagesUploaded(this)">
+                            <i class="fa-solid fa-plus text-slate-400 text-lg mb-1"></i>
+                            <span class="text-[10px] font-bold">Tambah Foto</span>
+                        </div>
+                    </div>
+
+                    <!-- Merge Prompt -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs md:text-sm font-bold">
+                            <label>Instruksi Penggabungan</label>
+                            <span onclick="usePresetPrompt('merge', 0)" class="text-blue-500 dark:text-blue-400 cursor-pointer hover:underline">
+                                🎨 Gaya Cat Air
+                            </span>
+                        </div>
+                        <textarea 
+                            id="merge-prompt"
+                            class="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all h-24 resize-none text-xs md:text-sm"
+                        >Gabungkan foto-foto ini secara artistik dengan latar belakang eksposure ganda pemandangan pegunungan berkabut.</textarea>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button
+                    onclick="handleStartProcessing()"
+                    class="w-full mt-6 py-4 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-blue-500/10 dark:shadow-none hover:shadow-xl hover:brightness-105 transition-all active:scale-95 bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
+                >
+                    <i class="fa-solid fa-magic text-sm"></i>
+                    <span id="submit-btn-text">Ubah Jadi Foto Produk Pro</span>
+                </button>
+            </div>
+
+            <!-- Right Workspace (Premium Interactive Output Area) -->
+            <div class="relative rounded-3xl p-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/20 shadow-xl overflow-hidden flex flex-col min-h-[460px] md:min-h-[560px]">
+                <!-- Top Accent Line -->
+                <div id="output-accent-line" class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 z-10"></div>
+                
+                <div class="flex-1 flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent to-black/5 dark:to-white/[0.02]">
+                    
+                    <!-- 1. EMPTY STATE -->
+                    <div id="output-state-empty" class="text-center space-y-4 max-w-sm fade-in">
+                        <div id="empty-state-icon-container" class="w-24 h-24 mx-auto bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 rounded-3xl flex items-center justify-center shadow-md">
+                            <i id="empty-state-icon" class="fa-solid fa-image text-blue-500 text-3xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-extrabold mb-1">Canvas Preview USEUS</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Silakan unggah bahan foto Anda di panel sebelah kiri, pilih gaya atau tulis perintah AI, kemudian klik tombol proses di bawah.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 2. LOADING STATE -->
+                    <div id="output-state-loading" class="hidden text-center space-y-5">
+                        <div class="relative w-64 h-64 rounded-2xl bg-gradient-to-tr from-blue-500/5 to-cyan-500/5 flex items-center justify-center shadow-inner">
+                            <div class="absolute inset-4 border border-dashed border-slate-300 dark:border-slate-800 rounded-xl"></div>
+                            <i class="fa-solid fa-sparkles text-blue-500 text-4xl animate-spin"></i>
+                        </div>
+                        <div>
+                            <p class="font-extrabold text-sm text-blue-500 dark:text-blue-400">Sedang Mengolah Gambar...</p>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Menggabungkan, mencocokkan eksposur, dan menerapkan efek AI</p>
+                        </div>
+                    </div>
+
+                    <!-- 3. SUCCESS STATE -->
+                    <div id="output-state-success" class="hidden relative w-full h-full flex flex-col items-center justify-center fade-in">
+                        <div class="relative shadow-2xl rounded-2xl overflow-hidden max-w-full max-h-[420px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <img id="result-img" class="max-w-full max-h-[400px] object-contain rounded-2xl" alt="Result preview">
+                        </div>
+                        
+                        <div class="mt-6 flex flex-col sm:flex-row gap-3 w-full max-w-xs justify-center">
+                            <button 
+                                onclick="downloadResult()"
+                                class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 hover:shadow-lg"
+                            >
+                                <i class="fa-solid fa-download"></i> Download Hasil HD
+                            </button>
+                            <button 
+                                onclick="resetWorksurface()"
+                                class="bg-slate-500/10 dark:bg-slate-500/20 hover:bg-slate-500/20 dark:hover:bg-slate-500/30 text-slate-700 dark:text-slate-300 px-5 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+                            >
+                                <i class="fa-solid fa-rotate-left"></i> Mulai Ulang
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="text-center py-6 border-t border-slate-200 dark:border-slate-900 text-xs md:text-sm text-slate-400 dark:text-slate-500 transition-colors mt-auto">
+        &copy; 2026 Editor AI USEUS. Hak Cipta Dilindungi Undang-Undang.
+    </footer>
+
+    <!-- Canvas Tersembunyi untuk Pemrosesan Demo -->
+    <canvas id="offscreen-canvas" class="hidden" width="800" height="800"></canvas>
+
+    <script>
+        // --- GLOBAL STATES ---
+        let isDarkMode = false;
+        let activeTab = 'product'; // 'product' | 'prewed' | 'merge'
+        let isDemoMode = true;
+        let userApiKey = "";
+        
+        // Data Sources (Base64)
+        let productBase64 = null;
+        let groomBase64 = null;
+        let brideBase64 = null;
+        let mergeImagesArray = []; // Max 4 elements {id, base64}
+
+        // --- PRESETS FOR QUICK DEMOS ---
+        const presets = {
+            product: [
+                "Tempatkan produk ini di atas meja marmer putih dengan pencahayaan studio yang lembut dan profesional. Berikan bayangan yang realistis.",
+                "Buat foto produk ini melayang di atas bebatuan basalt gelap dengan air terjun eksotis di latar belakang, nuansa alam liar yang mistis."
+            ],
+            prewed: [
+                "Foto prewedding romantis bergaya minimalis modern di taman bunga sakura Jepang dengan pancahayaan alami matahari sore yang hangat.",
+                "Pasangan mempelai di pantai pasir putih Bali, bergandengan tangan menatap laut lepas kala senja keemasan dengan kilauan ombak lembut."
+            ],
+            merge: [
+                "Gabungkan foto-foto ini secara artistik dengan latar belakang eksposure ganda pemandangan pegunungan berkabut.",
+                "Kolase artistik gaya lukisan cat air dengan percikan warna-warni pastel yang segar dan dinamis menyatukan seluruh elemen foto."
+            ]
+        };
+
+        // --- ON INITIALIZE ---
+        window.onload = function() {
+            // Setup Mode Gelap Berdasarkan Preferensi Sistem
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                toggleDarkMode();
+            }
+            
+            // Render render panel gabung foto
+            renderMergePreviews();
+        }
+
+        // --- UI INTERACTION FUNCTIONS ---
+        
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            if (isDarkMode) {
+                html.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-lg text-yellow-400';
+            } else {
+                html.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-lg text-blue-600';
+            }
+        }
+
+        function toggleInfoBox() {
+            const infoBox = document.getElementById('info-box');
+            infoBox.classList.toggle('hidden');
+        }
+
+        function handleApiKeyChange(val) {
+            userApiKey = val.trim();
+            const modeIndicator = document.getElementById('mode-indicator');
+            const modeText = document.getElementById('mode-text');
+            const btn = document.getElementById('engine-toggle-btn');
+
+            if (userApiKey !== "") {
+                isDemoMode = false;
+                modeIndicator.className = "flex h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse";
+                modeText.innerText = "Gemini AI Live (Menggunakan API Anda)";
+                modeText.className = "text-green-500 dark:text-green-400";
+                btn.innerText = "Kembali ke Demo";
+                btn.className = "text-xs px-3 py-1.5 rounded-lg font-bold bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/20 hover:bg-green-500/20 dark:hover:bg-green-500/30 transition-all";
+            } else {
+                setToDemoMode();
+            }
+        }
+
+        function toggleEngineMode() {
+            if (isDemoMode) {
+                // Mau nyalakan mode live tapi kunci kosong
+                if (userApiKey === "") {
+                    showToast("Harap masukkan API Key Gemini Anda terlebih dahulu di kolom sandi!");
+                    return;
+                }
+                isDemoMode = false;
+                handleApiKeyChange(userApiKey);
+            } else {
+                setToDemoMode();
+            }
+        }
+
+        function setToDemoMode() {
+            isDemoMode = true;
+            const modeIndicator = document.getElementById('mode-indicator');
+            const modeText = document.getElementById('mode-text');
+            const btn = document.getElementById('engine-toggle-btn');
+            
+            modeIndicator.className = "flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse";
+            modeText.innerText = "Demo Lokal (Gratis & Bebas Error)";
+            modeText.className = "text-amber-500 dark:text-amber-400";
+            btn.innerText = "Ganti ke AI Live";
+            btn.className = "text-xs px-3 py-1.5 rounded-lg font-bold bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 dark:hover:bg-amber-500/30 transition-all";
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            
+            // Elements
+            const btnProduct = document.getElementById('tab-btn-product');
+            const btnPrewed = document.getElementById('tab-btn-prewed');
+            const btnMerge = document.getElementById('tab-btn-merge');
+            
+            const panelProduct = document.getElementById('panel-product');
+            const panelPrewed = document.getElementById('panel-prewed');
+            const panelMerge = document.getElementById('panel-merge');
+
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const emptyStateIcon = document.getElementById('empty-state-icon');
+            const emptyStateIconContainer = document.getElementById('empty-state-icon-container');
+            const outputAccentLine = document.getElementById('output-accent-line');
+
+            // Reset buttons styling
+            [btnProduct, btnPrewed, btnMerge].forEach(btn => {
+                btn.className = "px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all text-slate-400 hover:text-blue-500 dark:hover:text-blue-400";
+            });
+
+            // Hide all panels
+            panelProduct.classList.add('hidden');
+            panelPrewed.classList.add('hidden');
+            panelMerge.classList.add('hidden');
+
+            // Activate specific tab
+            if (tab === 'product') {
+                btnProduct.className = "px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md";
+                panelProduct.classList.remove('hidden');
+                submitBtnText.innerText = "Ubah Jadi Foto Produk Pro";
+                emptyStateIcon.className = "fa-solid fa-box text-blue-500 text-3xl";
+                emptyStateIconContainer.className = "w-24 h-24 mx-auto bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 rounded-3xl flex items-center justify-center shadow-md animate-pulse-slow";
+                outputAccentLine.className = "absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 z-10";
+            } else if (tab === 'prewed') {
+                btnPrewed.className = "px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-md";
+                panelPrewed.classList.remove('hidden');
+                submitBtnText.innerText = "Rancang Foto Prewedding";
+                emptyStateIcon.className = "fa-solid fa-heart text-pink-500 text-3xl";
+                emptyStateIconContainer.className = "w-24 h-24 mx-auto bg-gradient-to-tr from-pink-500/10 to-purple-500/10 rounded-3xl flex items-center justify-center shadow-md animate-pulse-slow";
+                outputAccentLine.className = "absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-pink-500 via-purple-400 to-pink-600 z-10";
+            } else {
+                btnMerge.className = "px-5 py-3 rounded-xl flex items-center gap-2.5 text-xs md:text-sm font-bold transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md";
+                panelMerge.classList.remove('hidden');
+                submitBtnText.innerText = "Satukan Foto Sekarang";
+                emptyStateIcon.className = "fa-solid fa-cubes text-blue-500 text-3xl";
+                emptyStateIconContainer.className = "w-24 h-24 mx-auto bg-gradient-to-tr from-blue-500/10 to-cyan-500/10 rounded-3xl flex items-center justify-center shadow-md animate-pulse-slow";
+                outputAccentLine.className = "absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 z-10";
+            }
+
+            // Reset output view each time we switch tab to keep it tidy
+            resetWorksurfaceOnly();
+        }
+
+        function usePresetPrompt(category, index) {
+            if (category === 'product') {
+                document.getElementById('product-prompt').value = presets.product[index];
+            } else if (category === 'prewed') {
+                document.getElementById('prewed-prompt').value = presets.prewed[index];
+            } else if (category === 'merge') {
+                document.getElementById('merge-prompt').value = presets.merge[index];
+            }
+        }
+
+        // --- TOAST UTILITIES (Replaces standard Alert) ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast-bar');
+            const text = document.getElementById('toast-text');
+            text.innerText = msg;
+            toast.classList.remove('hidden');
+            toast.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function dismissToast() {
+            document.getElementById('toast-bar').classList.add('hidden');
+        }
+
+        // --- UPLOADER LOGIC ---
+
+        // Product Maker
+        function previewProductImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    productBase64 = e.target.result;
+                    document.getElementById('product-placeholder').classList.add('hidden');
+                    const img = document.getElementById('product-preview-img');
+                    img.src = productBase64;
+                    img.classList.remove('hidden');
+                    document.getElementById('remove-product-btn').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetProductUpload(event) {
+            event.stopPropagation();
+            productBase64 = null;
+            document.getElementById('product-file-input').value = "";
+            document.getElementById('product-preview-img').classList.add('hidden');
+            document.getElementById('product-placeholder').classList.remove('hidden');
+            document.getElementById('remove-product-btn').classList.add('hidden');
+        }
+
+        // Prewed: Groom
+        function previewGroomImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    groomBase64 = e.target.result;
+                    document.getElementById('groom-placeholder').classList.add('hidden');
+                    const img = document.getElementById('groom-preview-img');
+                    img.src = groomBase64;
+                    img.classList.remove('hidden');
+                    document.getElementById('remove-groom-btn').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetGroomUpload(event) {
+            event.stopPropagation();
+            groomBase64 = null;
+            document.getElementById('groom-file-input').value = "";
+            document.getElementById('groom-preview-img').classList.add('hidden');
+            document.getElementById('groom-placeholder').classList.remove('hidden');
+            document.getElementById('remove-groom-btn').classList.add('hidden');
+        }
+
+        // Prewed: Bride
+        function previewBrideImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    brideBase64 = e.target.result;
+                    document.getElementById('bride-placeholder').classList.add('hidden');
+                    const img = document.getElementById('bride-preview-img');
+                    img.src = brideBase64;
+                    img.classList.remove('hidden');
+                    document.getElementById('remove-bride-btn').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetBrideUpload(event) {
+            event.stopPropagation();
+            brideBase64 = null;
+            document.getElementById('bride-file-input').value = "";
+            document.getElementById('bride-preview-img').classList.add('hidden');
+            document.getElementById('bride-placeholder').classList.remove('hidden');
+            document.getElementById('remove-bride-btn').classList.add('hidden');
+        }
+
+        // Merge Photos Upload List Management
+        function handleMergeImagesUploaded(input) {
+            const files = Array.from(input.files);
+            
+            if (mergeImagesArray.length + files.length > 4) {
+                showToast("Anda hanya bisa mengunggah maksimal 4 foto untuk digabungkan!");
+                return;
+            }
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const uniqueId = Date.now() + Math.random().toString(36).substr(2, 9);
+                    mergeImagesArray.push({
+                        id: uniqueId,
+                        base64: e.target.result
+                    });
+                    renderMergePreviews();
+                }
+                reader.readAsDataURL(file);
+            });
+            input.value = ""; // Clear for next selection
+        }
+
+        function removeMergeImage(id) {
+            mergeImagesArray = mergeImagesArray.filter(img => img.id !== id);
+            renderMergePreviews();
+        }
+
+        function renderMergePreviews() {
+            const container = document.getElementById('merge-preview-container');
+            const addButtonCard = document.getElementById('add-merge-btn-card');
+            
+            // Clear current items except the add button
+            container.innerHTML = "";
+
+            mergeImagesArray.forEach((img, index) => {
+                const card = document.createElement('div');
+                card.className = "relative aspect-square rounded-xl overflow-hidden border border-blue-500/30 shadow-sm group fade-in";
+                card.innerHTML = `
+                    <img src="${img.base64}" class="w-full h-full object-cover" alt="Merge preview ${index + 1}">
+                    <button 
+                        onclick="removeMergeImage('${img.id}')"
+                        class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-500 text-white flex items-center justify-center transition-colors shadow-md"
+                    >
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+
+            // Show or hide add button based on max limit (4)
+            if (mergeImagesArray.length >= 4) {
+                addButtonCard.classList.add('hidden');
+            } else {
+                addButtonCard.classList.remove('hidden');
+            }
+        }
+
+
+        // --- ENGINE & GENERATOR EXECUTION ---
+
+        function handleStartProcessing() {
+            dismissToast();
+
+            // Input Validations
+            if (activeTab === 'product') {
+                if (!productBase64) {
+                    showToast("Harap unggah gambar produk Anda terlebih dahulu!");
+                    return;
+                }
+            } else if (activeTab === 'prewed') {
+                if (!groomBase64 || !brideBase64) {
+                    showToast("Harap lengkapi kedua foto mempelai (pria & wanita) secara terpisah!");
+                    return;
+                }
+            } else if (activeTab === 'merge') {
+                if (mergeImagesArray.length < 2) {
+                    showToast("Harap unggah minimal 2 gambar (dan maksimal 4) untuk digabung!");
+                    return;
+                }
+            }
+
+            // Change View to Loading state
+            document.getElementById('output-state-empty').classList.add('hidden');
+            document.getElementById('output-state-success').classList.add('hidden');
+            document.getElementById('output-state-loading').classList.remove('hidden');
+
+            if (isDemoMode) {
+                // RUN LOCAL RENDERING SIMULATION
+                setTimeout(() => {
+                    executeLocalCanvasSimulation();
+                }, 2000); // Realistic 2 second delay to simulate professional AI engine
+            } else {
+                // CALL REAL GEMINI API
+                executeRealGeminiProcess();
+            }
+        }
+
+        function executeLocalCanvasSimulation() {
+            const canvas = document.getElementById('offscreen-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 800;
+            canvas.height = 800;
+
+            // Clear Canvas
+            ctx.clearRect(0, 0, 800, 800);
+
+            if (activeTab === 'product') {
+                // Simulation 1: High-end Studio Backdrop for Product Maker
+                // Beautiful Soft Circular Radial Gradient Backdrop
+                const grad = ctx.createRadialGradient(400, 400, 50, 400, 400, 600);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.3, '#f1f5f9');
+                grad.addColorStop(1, '#94a3b8');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 800, 800);
+
+                // Luxurious Standing Platform
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(0, 540, 800, 260);
+                
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(0, 540);
+                ctx.lineTo(800, 540);
+                ctx.stroke();
+
+                // Highlight ambient bloom
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.beginPath();
+                ctx.arc(400, 320, 250, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Product with Soft Natural Shadow
+                const productImg = new Image();
+                productImg.onload = function() {
+                    const scale = Math.min(420 / productImg.width, 420 / productImg.height);
+                    const nw = productImg.width * scale;
+                    const nh = productImg.height * scale;
+                    const x = 400 - nw / 2;
+                    const y = 540 - nh + 20;
+
+                    // Realistic drop shadow ellipse
+                    ctx.save();
+                    ctx.translate(400, 540);
+                    ctx.scale(1.2, 0.2);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, nw / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
+                    ctx.fill();
+                    ctx.restore();
+
+                    // Render Product Layer
+                    ctx.drawImage(productImg, x, y, nw, nh);
+
+                    // Add Premium Banner Label at the Bottom
+                    renderWatermark(ctx);
+                    finalizeCanvasOutput();
+                }
+                productImg.src = productBase64;
+
+            } else if (activeTab === 'prewed') {
+                // Simulation 2: Romantic Landscape for Prewedding AI Studio
+                // Sunset sky linear gradient
+                const grad = ctx.createLinearGradient(0, 0, 0, 800);
+                grad.addColorStop(0, '#fdba74'); // Warm golden sunset
+                grad.addColorStop(0.4, '#f472b6'); // Pink blossom sky
+                grad.addColorStop(0.8, '#c084fc'); // Warm violet horizon
+                grad.addColorStop(1, '#38bdf8'); // Clear sky contrast
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 800, 800);
+
+                // Ambient cloud silhouettes
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.beginPath();
+                ctx.arc(150, 180, 85, 0, Math.PI * 2);
+                ctx.arc(240, 180, 110, 0, Math.PI * 2);
+                ctx.arc(320, 180, 75, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.arc(620, 260, 95, 0, Math.PI * 2);
+                ctx.arc(700, 260, 115, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw Romantic Heart Overlays
+                ctx.fillStyle = 'rgba(244, 114, 182, 0.7)';
+                ctx.font = '72px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('❤️', 400, 420);
+                ctx.font = '36px sans-serif';
+                ctx.fillText('✨', 400, 310);
+
+                // Draw portraits inside stylish floral frames
+                const drawCircularPortrait = (src, cx, cy, radius, strokeColor) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = function() {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                            ctx.closePath();
+                            ctx.clip();
+                            
+                            const scale = Math.max((radius * 2) / img.width, (radius * 2) / img.height);
+                            const nw = img.width * scale;
+                            const nh = img.height * scale;
+                            ctx.drawImage(img, cx - nw / 2, cy - nh / 2, nw, nh);
+                            ctx.restore();
+
+                            // Frame Ring
+                            ctx.strokeStyle = strokeColor;
+                            ctx.lineWidth = 6;
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                            ctx.stroke();
+                            resolve();
+                        }
+                        img.src = src;
+                    });
+                };
+
+                Promise.all([
+                    drawCircularPortrait(groomBase64, 270, 400, 140, '#60a5fa'),
+                    drawCircularPortrait(brideBase64, 530, 400, 140, '#f472b6')
+                ]).then(() => {
+                    renderWatermark(ctx, "USEUS AI Studio - Karya Prewedding Romantis");
+                    finalizeCanvasOutput();
+                });
+
+            } else if (activeTab === 'merge') {
+                // Simulation 3: Clean grid layout with custom canvas effects
+                ctx.fillStyle = '#0f172a'; // Luxury slate dark backdrop
+                ctx.fillRect(0, 0, 800, 800);
+
+                const total = mergeImagesArray.length;
+                const cols = total > 2 ? 2 : total;
+                const rows = total > 2 ? 2 : 1;
+                const cellW = 800 / cols;
+                const cellH = 800 / rows;
+
+                const renderCells = mergeImagesArray.map((imgObj, idx) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = function() {
+                            const r = Math.floor(idx / cols);
+                            const c = idx % cols;
+                            const dx = c * cellW;
+                            const dy = r * cellH;
+
+                            ctx.save();
+                            // Border padding inside grid
+                            ctx.rect(dx + 6, dy + 6, cellW - 12, cellH - 12);
+                            ctx.clip();
+                            
+                            const scale = Math.max(cellW / img.width, cellH / img.height);
+                            const nw = img.width * scale;
+                            const nh = img.height * scale;
+                            ctx.drawImage(img, dx + (cellW - nw) / 2, dy + (cellH - nh) / 2, nw, nh);
+                            ctx.restore();
+                            resolve();
+                        }
+                        img.src = imgObj.base64;
+                    });
+                });
+
+                Promise.all(renderCells).then(() => {
+                    renderWatermark(ctx, "USEUS AI - Kolase Kreatif Mandiri");
+                    finalizeCanvasOutput();
+                });
+            }
+        }
+
+        function renderWatermark(ctx, customText = "USEUS AI Studio - Hasil Rendisi Profesional") {
+            // Elegant watermark label
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+            ctx.fillRect(0, 720, 800, 80);
+            
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(customText, 400, 755);
+            
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '500 13px system-ui, -apple-system, sans-serif';
+            ctx.fillText("Model Engine Terpasang: Gemini Nano Banana", 400, 782);
+        }
+
+        function finalizeCanvasOutput() {
+            const canvas = document.getElementById('offscreen-canvas');
+            const resultImgUrl = canvas.toDataURL('image/png');
+            
+            // Show result
+            document.getElementById('output-state-loading').classList.add('hidden');
+            const resultImg = document.getElementById('result-img');
+            resultImg.src = resultImgUrl;
+            document.getElementById('output-state-success').classList.remove('hidden');
+        }
+
+        async function executeRealGeminiProcess() {
+            // Setup parameters
+            let promptText = "";
+            let imageList = [];
+
+            if (activeTab === 'product') {
+                promptText = document.getElementById('product-prompt').value;
+                imageList = [productBase64];
+            } else if (activeTab === 'prewed') {
+                promptText = document.getElementById('prewed-prompt').value;
+                imageList = [groomBase64, brideBase64];
+            } else {
+                promptText = document.getElementById('merge-prompt').value;
+                imageList = mergeImagesArray.map(img => img.base64);
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${userApiKey}`;
+
+            const imageParts = imageList.map(dataUrl => {
+                const mimeTypeMatch = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,/);
+                const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : "image/jpeg";
+                const base64Data = dataUrl.split(',')[1];
+                
+                return {
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data
+                    }
+                };
+            });
+
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: promptText },
+                        ...imageParts
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ['TEXT', 'IMAGE']
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error?.message || `Respons Server Error (Status: ${response.status})`);
+                }
+
+                const result = await response.json();
+                const imagePart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                
+                if (imagePart) {
+                    const generatedUrl = `data:${imagePart.inlineData.mimeType || 'image/png'};base64,${imagePart.inlineData.data}`;
+                    
+                    document.getElementById('output-state-loading').classList.add('hidden');
+                    const resultImg = document.getElementById('result-img');
+                    resultImg.src = generatedUrl;
+                    document.getElementById('output-state-success').classList.remove('hidden');
+                } else {
+                    throw new Error('AI tidak berhasil mengembalikan format gambar. Coba ganti prompt Anda.');
+                }
+            } catch (err) {
+                console.error("Gemini API Error: ", err);
+                // Gagal, tampilkan ke user lalu fallback ke demo
+                showToast(`Gagal memproses Live AI: ${err.message}. Aplikasi kembali ke mode Demo.`);
+                setToDemoMode();
+                executeLocalCanvasSimulation();
+            }
+        }
+
+        // --- UTILITY ACTION BUTTONS ---
+
+        function downloadResult() {
+            const resultImg = document.getElementById('result-img');
+            if (resultImg && resultImg.src) {
+                const link = document.createElement('a');
+                link.download = `useus-ai-${activeTab}-${Date.now()}.png`;
+                link.href = resultImg.src;
+                link.click();
+            }
+        }
+
+        function resetWorksurface() {
+            // Reset state
+            productBase64 = null;
+            groomBase64 = null;
+            brideBase64 = null;
+            mergeImagesArray = [];
+
+            // Reset Input UI
+            document.getElementById('product-file-input').value = "";
+            document.getElementById('groom-file-input').value = "";
+            document.getElementById('bride-file-input').value = "";
+            
+            // Toggle element visibility
+            document.getElementById('product-placeholder').classList.remove('hidden');
+            document.getElementById('product-preview-img').classList.add('hidden');
+            document.getElementById('remove-product-btn').classList.add('hidden');
+
+            document.getElementById('groom-placeholder').classList.remove('hidden');
+            document.getElementById('groom-preview-img').classList.add('hidden');
+            document.getElementById('remove-groom-btn').classList.add('hidden');
+
+            document.getElementById('bride-placeholder').classList.remove('hidden');
+            document.getElementById('bride-preview-img').classList.add('hidden');
+            document.getElementById('remove-bride-btn').classList.add('hidden');
+
+            renderMergePreviews();
+            resetWorksurfaceOnly();
+        }
+
+        function resetWorksurfaceOnly() {
+            document.getElementById('output-state-loading').classList.add('hidden');
+            document.getElementById('output-state-success').classList.add('hidden');
+            document.getElementById('output-state-empty').classList.remove('hidden');
+            document.getElementById('result-img').src = "";
+            dismissToast();
+        }
+    </script>
+</body>
+</html>
